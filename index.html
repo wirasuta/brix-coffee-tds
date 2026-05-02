@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>brix-coffee-tds</title>
+  <title>Brix ↔ Coffee TDS Calculator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <header class="header">
-      <span class="title">brix-coffee-tds</span>
+      <span class="title">Brix ↔ Coffee TDS Calculator</span>
       <button class="reset-btn" id="resetBtn" title="Reset all"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
     </header>
 
@@ -38,7 +38,7 @@
           <input type="number" id="water" step="0.1" min="0" placeholder="0.0" class="input">
         </div>
         <div class="field">
-          <label for="method" class="label tooltip-trigger">METHOD<span class="tooltip">Brew method — affects which extraction formula is used</span></label>
+          <label for="method" class="label tooltip-trigger">METHOD<span class="tooltip">Brew method — affects extraction yield quality range</span></label>
           <select id="method" class="input input--select">
             <option value="filter">FILTER</option>
             <option value="espresso">ESPRESSO</option>
@@ -102,7 +102,8 @@ Temperature Compensation:
             </thead>
             <tbody>
               <tr><td>Filter coffee</td><td>1.15–1.45%</td><td>18–22%</td></tr>
-              <tr><td>Espresso</td><td>7–12%</td><td>18–22%</td></tr>
+              <tr><td>Espresso</td><td>7–12%</td><td>18–21%</td></tr>
+              <tr><td>Immersion</td><td>1.2–1.5%</td><td>17–21%</td></tr>
             </tbody>
           </table>
 

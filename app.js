@@ -1,9 +1,26 @@
 (function () {
-  const BRIX_TDS_FACTOR = 0.85;
-  const TEMP_COEFF = 0.0002;
-  const REF_TEMP = 20;
+  var BRIX_TDS_FACTOR = 0.85;
+  var TEMP_COEFF = 0.0002;
+  var REF_TEMP = 20;
 
-  const els = {
+  var EY_RANGES = {
+    filter:     { min: 18, max: 22 },
+    espresso:   { min: 18, max: 21 },
+    immersion:  { min: 17, max: 21 },
+  };
+
+  var state = {
+    anchor: 'brix',
+    brix: null,
+    tds: null,
+    dose: null,
+    water: null,
+    method: 'filter',
+    brewWeight: null,
+    temperature: 20,
+  };
+
+  var els = {
     brix: document.getElementById('brix'),
     tds: document.getElementById('tds'),
     dose: document.getElementById('dose'),
@@ -19,127 +36,125 @@
     resetBtn: document.getElementById('resetBtn'),
   };
 
-  let lastEdited = null;
+  function adjustedBrix(rawBrix, temp) {
+    if (temp === REF_TEMP) return rawBrix;
+    return rawBrix / (1 + (temp - REF_TEMP) * TEMP_COEFF);
+  }
 
-  function getAdjustedBrix(rawBrix, temp) {
-    if (temp === REF_TEMP || isNaN(temp)) return rawBrix;
-    const correction = 1 + (temp - REF_TEMP) * TEMP_COEFF;
-    return rawBrix / correction;
+  function rawBrixFromAdjusted(adjBrix, temp) {
+    if (temp === REF_TEMP) return adjBrix;
+    return adjBrix * (1 + (temp - REF_TEMP) * TEMP_COEFF);
   }
 
   function brixToTds(brix, temp) {
-    return getAdjustedBrix(brix, temp) * BRIX_TDS_FACTOR;
+    return adjustedBrix(brix, temp) * BRIX_TDS_FACTOR;
   }
 
-  function tdsToBrix(tds) {
-    return tds / BRIX_TDS_FACTOR;
+  function tdsToBrix(tds, temp) {
+    return rawBrixFromAdjusted(tds / BRIX_TDS_FACTOR, temp);
   }
 
   function calcEY(tds, waterWeight, doseWeight) {
-    const brewRatio = waterWeight / doseWeight;
-    return (tds * brewRatio) / (1 - tds / 100);
+    return (tds * waterWeight / doseWeight) / (1 - tds / 100);
   }
 
   function calcEEY(tds, brewWeight, doseWeight) {
     return (tds / 100) * brewWeight / doseWeight * 100;
   }
 
-  function getQuality(ey) {
-    if (ey < 18) return { cls: 'under', label: 'under-extracted' };
-    if (ey <= 22) return { cls: 'optimal', label: 'optimal' };
+  function getQuality(ey, method) {
+    var range = EY_RANGES[method] || EY_RANGES.filter;
+    if (ey < range.min) return { cls: 'under', label: 'under-extracted' };
+    if (ey <= range.max) return { cls: 'optimal', label: 'optimal' };
     return { cls: 'over', label: 'over-extracted' };
   }
 
-  function fmt(val, decimals) {
-    if (isNaN(val) || !isFinite(val)) return '—';
-    return val.toFixed(decimals);
+  function fmt(val, d) {
+    if (isNaN(val) || !isFinite(val)) return '';
+    return val.toFixed(d);
   }
 
-  function syncBrixTds(source) {
-    const temp = parseFloat(els.temperature.value) || REF_TEMP;
+  function render() {
+    var temp = state.temperature;
 
-    if (source === 'brix') {
-      const brix = parseFloat(els.brix.value);
-      if (isNaN(brix) || brix === '') {
-        els.tds.value = '';
-        return;
-      }
-      const tds = brixToTds(brix, temp);
-      els.tds.value = fmt(tds, 2);
-    } else {
-      const tds = parseFloat(els.tds.value);
-      if (isNaN(tds) || tds === '') {
-        els.brix.value = '';
-        return;
-      }
-      const brix = tdsToBrix(tds);
-      els.brix.value = fmt(brix, 2);
+    if (state.anchor === 'brix' && state.brix !== null) {
+      state.tds = brixToTds(state.brix, temp);
+      els.tds.value = fmt(state.tds, 2);
+    } else if (state.anchor === 'tds' && state.tds !== null) {
+      state.brix = tdsToBrix(state.tds, temp);
+      els.brix.value = fmt(state.brix, 2);
     }
-  }
 
-  function recalcTdsFromTemp() {
-    if (lastEdited === 'tds') return;
-    const brix = parseFloat(els.brix.value);
-    if (isNaN(brix)) return;
-    const temp = parseFloat(els.temperature.value) || REF_TEMP;
-    const tds = brixToTds(brix, temp);
-    els.tds.value = fmt(tds, 2);
-  }
+    if (state.brix === null && state.anchor !== 'tds') {
+      els.tds.value = '';
+      state.tds = null;
+    }
+    if (state.tds === null && state.anchor !== 'brix') {
+      els.brix.value = '';
+      state.brix = null;
+    }
 
-  function updateEY() {
-    const tds = parseFloat(els.tds.value);
-    const dose = parseFloat(els.dose.value);
-    const water = parseFloat(els.water.value);
-    const brewW = parseFloat(els.brewWeight.value);
+    var tds = state.tds;
+    var dose = state.dose;
+    var water = state.water;
+    var brewW = state.brewWeight;
 
-    if (isNaN(tds) || isNaN(dose) || isNaN(water) || dose <= 0 || water <= 0) {
+    if (tds !== null && dose > 0 && water > 0) {
+      var ey = calcEY(tds, water, dose);
+      els.eyValue.textContent = isNaN(ey) || !isFinite(ey) ? '—' : ey.toFixed(1);
+
+      var q = getQuality(ey, state.method);
+      els.qualityDot.className = 'quality-dot quality-dot--' + q.cls;
+      els.qualityLabel.textContent = q.label;
+      els.qualityLabel.className = 'quality-label quality-label--' + q.cls;
+
+      if (brewW > 0) {
+        var eey = calcEEY(tds, brewW, dose);
+        els.eeyValue.textContent = isNaN(eey) || !isFinite(eey) ? '—' : eey.toFixed(1);
+        els.eeyGroup.style.display = '';
+      } else {
+        els.eeyGroup.style.display = 'none';
+      }
+    } else {
       els.eyValue.textContent = '—';
       els.qualityDot.className = 'quality-dot';
       els.qualityLabel.textContent = '—';
       els.qualityLabel.className = 'quality-label';
       els.eeyGroup.style.display = 'none';
-      return;
-    }
-
-    const ey = calcEY(tds, water, dose);
-    els.eyValue.textContent = fmt(ey, 1);
-
-    const q = getQuality(ey);
-    els.qualityDot.className = 'quality-dot quality-dot--' + q.cls;
-    els.qualityLabel.textContent = q.label;
-    els.qualityLabel.className = 'quality-label quality-label--' + q.cls;
-
-    if (!isNaN(brewW) && brewW > 0) {
-      const eey = calcEEY(tds, brewW, dose);
-      els.eeyValue.textContent = fmt(eey, 1);
-      els.eeyGroup.style.display = '';
-    } else {
-      els.eeyGroup.style.display = 'none';
     }
   }
 
   function onBrixInput() {
-    lastEdited = 'brix';
-    syncBrixTds('brix');
-    updateEY();
+    state.brix = parseFloat(els.brix.value) || null;
+    state.anchor = 'brix';
+    render();
   }
 
   function onTdsInput() {
-    lastEdited = 'tds';
-    syncBrixTds('tds');
-    updateEY();
+    state.tds = parseFloat(els.tds.value) || null;
+    state.anchor = 'tds';
+    render();
   }
 
   function onParamInput() {
-    updateEY();
+    state.dose = parseFloat(els.dose.value) || null;
+    state.water = parseFloat(els.water.value) || null;
+    state.method = els.method.value;
+    state.brewWeight = parseFloat(els.brewWeight.value) || null;
+    render();
   }
 
   function onTempInput() {
-    recalcTdsFromTemp();
-    updateEY();
+    state.temperature = parseFloat(els.temperature.value) || REF_TEMP;
+    render();
   }
 
   function resetAll() {
+    state = {
+      anchor: 'brix',
+      brix: null, tds: null, dose: null, water: null,
+      method: 'filter', brewWeight: null, temperature: 20,
+    };
     els.brix.value = '';
     els.tds.value = '';
     els.dose.value = '';
@@ -147,8 +162,7 @@
     els.method.value = 'filter';
     els.brewWeight.value = '';
     els.temperature.value = '20';
-    lastEdited = null;
-    updateEY();
+    render();
   }
 
   els.brix.addEventListener('input', onBrixInput);
@@ -159,4 +173,6 @@
   els.brewWeight.addEventListener('input', onParamInput);
   els.temperature.addEventListener('input', onTempInput);
   els.resetBtn.addEventListener('click', resetAll);
+
+  render();
 })();
