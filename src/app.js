@@ -34,6 +34,7 @@
     qualityDot: document.getElementById('qualityDot'),
     qualityLabel: document.getElementById('qualityLabel'),
     resetBtn: document.getElementById('resetBtn'),
+    copyBtn: document.getElementById('copyBtn'),
   };
 
   function adjustedBrix(rawBrix, temp) {
@@ -72,6 +73,35 @@
   function fmt(val, d) {
     if (isNaN(val) || !isFinite(val)) return '';
     return val.toFixed(d);
+  }
+
+  function serializeState(state) {
+    var p = new URLSearchParams();
+    if (state.brix !== null) p.set('brix', state.brix);
+    if (state.dose !== null) p.set('dose', state.dose);
+    if (state.water !== null) p.set('water', state.water);
+    if (state.method !== 'filter') p.set('method', state.method);
+    if (state.brewWeight !== null) p.set('brew', state.brewWeight);
+    if (state.temperature !== 20) p.set('temp', state.temperature);
+    return p.toString();
+  }
+
+  function shareUrl() {
+    var qs = serializeState(state);
+    return window.location.origin + window.location.pathname + (qs ? '?' + qs : '');
+  }
+
+  function deserializeState() {
+    var p = new URLSearchParams(window.location.search);
+    var s = {};
+    var v;
+    v = parseFloat(p.get('brix')); if (!isNaN(v) && v > 0) s.brix = v;
+    v = parseFloat(p.get('dose')); if (!isNaN(v) && v > 0) s.dose = v;
+    v = parseFloat(p.get('water')); if (!isNaN(v) && v > 0) s.water = v;
+    var m = p.get('method'); if (m && EY_RANGES[m]) s.method = m;
+    v = parseFloat(p.get('brew')); if (!isNaN(v) && v > 0) s.brewWeight = v;
+    v = parseFloat(p.get('temp')); if (!isNaN(v) && v >= 0 && v <= 100) s.temperature = v;
+    return s;
   }
 
   function render() {
@@ -165,6 +195,28 @@
     render();
   }
 
+  var SHARE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+  var CHECK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function onCopyLink() {
+    var url = shareUrl();
+    navigator.clipboard.writeText(url).then(function () {
+      els.copyBtn.innerHTML = CHECK_ICON;
+      els.copyBtn.classList.add('copy-btn--copied');
+      setTimeout(function () {
+        els.copyBtn.innerHTML = SHARE_ICON;
+        els.copyBtn.classList.remove('copy-btn--copied');
+      }, 1500);
+    }).catch(function () {
+      els.copyBtn.innerHTML = '!';
+      els.copyBtn.classList.add('copy-btn--error');
+      setTimeout(function () {
+        els.copyBtn.innerHTML = SHARE_ICON;
+        els.copyBtn.classList.remove('copy-btn--error');
+      }, 1500);
+    });
+  }
+
   els.brix.addEventListener('input', onBrixInput);
   els.tds.addEventListener('input', onTdsInput);
   els.dose.addEventListener('input', onParamInput);
@@ -173,6 +225,14 @@
   els.brewWeight.addEventListener('input', onParamInput);
   els.temperature.addEventListener('input', onTempInput);
   els.resetBtn.addEventListener('click', resetAll);
+  els.copyBtn.addEventListener('click', onCopyLink);
 
+  var restored = deserializeState();
+  if (restored.brix !== undefined) { state.brix = restored.brix; els.brix.value = restored.brix; }
+  if (restored.dose !== undefined) { state.dose = restored.dose; els.dose.value = restored.dose; }
+  if (restored.water !== undefined) { state.water = restored.water; els.water.value = restored.water; }
+  if (restored.method !== undefined) { state.method = restored.method; els.method.value = restored.method; }
+  if (restored.brewWeight !== undefined) { state.brewWeight = restored.brewWeight; els.brewWeight.value = restored.brewWeight; }
+  if (restored.temperature !== undefined) { state.temperature = restored.temperature; els.temperature.value = restored.temperature; }
   render();
 })();

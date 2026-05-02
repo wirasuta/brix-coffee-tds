@@ -70,6 +70,12 @@ body {
   color: var(--text);
 }
 
+.header-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.copy-btn,
 .reset-btn {
   background: none;
   border: 1px solid var(--border);
@@ -83,9 +89,20 @@ body {
   transition: border-color 0.15s, color 0.15s;
 }
 
+.copy-btn:hover,
 .reset-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.copy-btn--copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.copy-btn--error {
+  border-color: var(--red);
+  color: var(--red);
 }
 
 .row {
