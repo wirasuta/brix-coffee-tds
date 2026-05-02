@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>brix-coffee-tds</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <span class="title">brix-coffee-tds</span>
+      <button class="reset-btn" id="resetBtn" title="Reset all"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+    </header>
+
+    <section class="row row-primary">
+      <div class="field-group field-group--brix-tds">
+        <div class="field">
+          <label for="brix" class="label">BRIX %</label>
+          <input type="number" id="brix" step="0.01" min="0" max="32" placeholder="0.00" class="input input--primary">
+        </div>
+        <span class="sync-arrow">↔</span>
+        <div class="field">
+          <label for="tds" class="label">TDS %</label>
+          <input type="number" id="tds" step="0.01" min="0" max="20" placeholder="0.00" class="input input--primary">
+        </div>
+      </div>
+    </section>
+
+    <section class="row row-params">
+      <div class="field-group">
+        <div class="field">
+          <label for="dose" class="label tooltip-trigger">DOSE (g)<span class="tooltip">Weight of dry coffee grounds used for brewing</span></label>
+          <input type="number" id="dose" step="0.1" min="0" placeholder="0.0" class="input">
+        </div>
+        <div class="field">
+          <label for="water" class="label tooltip-trigger">WATER (g)<span class="tooltip">Total water weight used during brewing</span></label>
+          <input type="number" id="water" step="0.1" min="0" placeholder="0.0" class="input">
+        </div>
+        <div class="field">
+          <label for="method" class="label tooltip-trigger">METHOD<span class="tooltip">Brew method — affects which extraction formula is used</span></label>
+          <select id="method" class="input input--select">
+            <option value="filter">FILTER</option>
+            <option value="espresso">ESPRESSO</option>
+            <option value="immersion">IMMERSION</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="brewWeight" class="label tooltip-trigger">BREW (g)<span class="tooltip">Actual beverage weight in the cup after filtering (optional — enables EEY)</span></label>
+          <input type="number" id="brewWeight" step="0.1" min="0" placeholder="0.0" class="input">
+        </div>
+        <div class="field">
+          <label for="temperature" class="label tooltip-trigger">TEMP (°C)<span class="tooltip">Sample temperature — used for refractometer compensation (defaults to 20°C)</span></label>
+          <input type="number" id="temperature" step="0.1" value="20" min="0" max="100" class="input">
+        </div>
+      </div>
+    </section>
+
+    <section class="row row-result">
+      <div class="result-group">
+        <div class="result-value">
+          <span class="result-label">EY</span>
+          <span class="result-number" id="eyValue">—</span>
+          <span class="result-unit">%</span>
+        </div>
+        <div class="quality-indicator" id="qualityIndicator">
+          <span class="quality-dot" id="qualityDot"></span>
+          <span class="quality-label" id="qualityLabel">—</span>
+        </div>
+      </div>
+      <div class="result-group result-eey" id="eeyGroup" style="display:none">
+        <div class="result-value">
+          <span class="result-label">EEY</span>
+          <span class="result-number" id="eeyValue">—</span>
+          <span class="result-unit">%</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="row row-references">
+      <details class="references">
+        <summary class="references-toggle">▼ REFERENCES &amp; FORMULAS</summary>
+        <div class="references-content">
+          <h3>Formulas</h3>
+          <pre class="formula">Brix → TDS:    TDS % = Brix % × 0.85
+TDS → Brix:    Brix % = TDS % / 0.85
+
+Extraction Yield:
+  EY = (TDS % × Brew Ratio) / (1 - TDS %)
+  where Brew Ratio = Water Weight / Dose Weight
+
+Effective Extraction Yield:
+  EEY = (TDS % × Brew Weight) / Dose Weight
+
+Temperature Compensation:
+  Adjusted Brix = Raw Brix / (1 + (Temp - 20) × 0.0002)</pre>
+
+          <h3>Typical Ranges</h3>
+          <table class="ranges-table">
+            <thead>
+              <tr><th>Brew Type</th><th>TDS Range</th><th>Target EY</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Filter coffee</td><td>1.15–1.45%</td><td>18–22%</td></tr>
+              <tr><td>Espresso</td><td>7–12%</td><td>18–22%</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Sources</h3>
+          <ol class="sources">
+            <li>Khymos — Martin Lersch, "Wonders of extraction: Coffee (part 1)" — <a href="https://khymos.org/2021/02/14/wonders-of-extraction-coffee-part-1/" target="_blank" rel="noopener">khymos.org</a></li>
+            <li>Complete Home Barista — "Refractometer TDS Measurement: Espresso Extraction Guide" — <a href="https://completehomebarista.com/guides/refractometer-espresso-tds-measurement/" target="_blank" rel="noopener">completehomebarista.com</a></li>
+            <li>NISupply — "Comparing Coffee Refractometers That Measure in TDS vs % Brix" — <a href="https://www.nisupply.com/blogs/news/comparing-coffee-refractometers-that-measure-in-tds-vs-brix" target="_blank" rel="noopener">nisupply.com</a></li>
+            <li>BKON — "Exploring the Correlation Between TDS and Brix" — <a href="https://www.bkonbrew.com/bkonblog/brixandtds" target="_blank" rel="noopener">bkonbrew.com</a></li>
+            <li>MTPak Coffee — "Everything you need to know about Brix readings for coffee" — <a href="https://mtpak.coffee/2022/06/everything-to-know-about-brix-readings-for-coffee/" target="_blank" rel="noopener">mtpak.coffee</a></li>
+            <li>Homeground Coffee Roasters — "From Brix to TDS" — <a href="https://homegroundcoffeeroasters.com/blogs/journals/from-brix-to-tds" target="_blank" rel="noopener">homegroundcoffeeroasters.com</a></li>
+            <li>DeepWiki (quantitativecafe) — "TDS vs Brix Measurements" — <a href="https://deepwiki.com/quantitativecafe/blog/3.4-tds-vs-brix-measurements" target="_blank" rel="noopener">deepwiki.com</a></li>
+          </ol>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
